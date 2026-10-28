@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏥 Ol's Ziekenhuis Woordenschat Game</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #e3f2fd 0%, #f0f4ff 100%);
+    min-height: 100vh;
+    color: #1a237e;
+  }
+  header {
+    background: linear-gradient(90deg, #1565c0, #0288d1);
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  }
+  header h1 { font-size: 1.4em; }
+  .stars { font-size: 1.6em; letter-spacing: 2px; }
+  .score-badge {
+    background: #ffd600;
+    color: #1a237e;
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-weight: bold;
+    font-size: 1em;
+  }
+
+  /* HOME SCREEN */
+  #home {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 20px;
+    gap: 20px;
+  }
+  .big-emoji { font-size: 5em; margin-bottom: 8px; }
+  .home-title { font-size: 2em; font-weight: bold; color: #1565c0; text-align: center; }
+  .home-sub { font-size: 1.1em; color: #555; text-align: center; max-width: 420px; }
+  .week-buttons { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+  .week-btn {
+    background: white;
+    border: 3px solid #1565c0;
+    border-radius: 16px;
+    padding: 16px 24px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    color: #1565c0;
+    transition: all 0.2s;
+    text-align: center;
+    min-width: 160px;
+  }
+  .week-btn:hover { background: #1565c0; color: white; transform: scale(1.05); }
+  .week-btn .wk-emoji { font-size: 2em; display: block; margin-bottom: 6px; }
+  .mode-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; max-width: 500px; width: 100%; }
+  .mode-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    border: 3px solid transparent;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+  }
+  .mode-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+  .mode-card.flash { border-color: #ff9800; }
+  .mode-card.quiz { border-color: #4caf50; }
+  .mode-card.match { border-color: #9c27b0; }
+  .mode-card.type { border-color: #f44336; }
+  .mode-icon { font-size: 2.5em; margin-bottom: 8px; }
+  .mode-name { font-weight: bold; font-size: 1em; color: #333; }
+  .mode-desc { font-size: 0.8em; color: #777; margin-top: 4px; }
+  .back-btn {
+    background: none;
+    border: 2px solid #90caf9;
+    color: #1565c0;
+    padding: 8px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-bottom: 16px;
+  }
+  .back-btn:hover { background: #e3f2fd; }
+
+  /* GAME AREA */
+  #game { display: none; max-width: 600px; margin: 0 auto; padding: 20px; }
+  .progress-bar-wrap {
+    background: #e0e0e0;
+    border-radius: 10px;
+    height: 10px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .progress-bar { background: linear-gradient(90deg, #42a5f5, #1565c0); height: 100%; border-radius: 10px; transition: width 0.4s; }
+  .question-count { text-align: right; font-size: 0.85em; color: #888; margin-bottom: 8px; }
+
+  /* FLASHCARD */
+  .flashcard-wrap { perspective: 1000px; }
+  .flashcard {
+    width: 100%;
+    min-height: 200px;
+    border-radius: 20px;
+    cursor: pointer;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.5s;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+  .flashcard.flipped { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    min-height: 200px;
+    backface-visibility: hidden;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    text-align: center;
+  }
+  .card-front { background: linear-gradient(135deg, #1565c0, #0288d1); color: white; }
+  .card-back { background: linear-gradient(135deg, #43a047, #00897b); color: white; transform: rotateY(180deg); }
+  .card-word { font-size: 2em; font-weight: bold; margin-bottom: 10px; }
+  .card-hint { font-size: 0.85em; opacity: 0.8; }
+  .card-def { font-size: 1.1em; line-height: 1.5; }
+  .card-nav { display: flex; gap: 12px; margin-top: 20px; justify-content: center; flex-wrap: wrap; }
+  .btn-primary {
+    background: #1565c0;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: all 0.2s;
+  }
+  .btn-primary:hover { background: #0d47a1; transform: scale(1.05); }
+  .btn-success { background: #43a047; }
+  .btn-success:hover { background: #2e7d32; }
+  .btn-danger { background: #e53935; }
+  .btn-danger:hover { background: #b71c1c; }
+  .btn-warn { background: #fb8c00; }
+  .btn-warn:hover { background: #e65100; }
+
+  /* MULTIPLE CHOICE */
+  .mc-question {
+    background: white;
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+  .mc-word { font-size: 2em; font-weight: bold; color: #1565c0; margin-bottom: 8px; }
+  .mc-label { font-size: 0.9em; color: #888; margin-bottom: 24px; }
+  .mc-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+  .mc-opt {
+    background: #f5f5f5;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 14px 12px;
+    cursor: pointer;
+    font-size: 0.95em;
+    text-align: left;
+    transition: all 0.2s;
+    line-height: 1.4;
+  }
+  .mc-opt:hover:not(.disabled) { background: #e3f2fd; border-color: #1565c0; }
+  .mc-opt.correct { background: #e8f5e9; border-color: #43a047; color: #2e7d32; font-weight: bold; }
+  .mc-opt.wrong { background: #ffebee; border-color: #e53935; color: #b71c1c; }
+  .mc-opt.disabled { cursor: default; }
+  .feedback { text-align: center; margin-top: 16px; font-size: 1.2em; font-weight: bold; min-height: 30px; }
+  .feedback.good { color: #43a047; }
+  .feedback.bad { color: #e53935; }
+
+  /* MATCHING */
+  .match-area { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .match-col { display: flex; flex-direction: column; gap: 8px; }
+  .match-col-label { font-weight: bold; text-align: center; margin-bottom: 4px; color: #555; font-size: 0.9em; }
+  .match-item {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 0.9em;
+    text-align: center;
+    transition: all 0.2s;
+    line-height: 1.3;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .match-item:hover:not(.matched):not(.wrong-flash) { background: #e3f2fd; border-color: #1565c0; }
+  .match-item.selected { background: #1565c0; color: white; border-color: #0d47a1; }
+  .match-item.matched { background: #e8f5e9; border-color: #43a047; color: #2e7d32; cursor: default; }
+  .match-item.wrong-flash { background: #ffebee; border-color: #e53935; }
+  .match-score { text-align: center; margin-top: 12px; font-size: 1em; color: #555; }
+
+  /* TYPE INPUT */
+  .type-question {
+    background: white;
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+  .type-def { font-size: 1.15em; line-height: 1.6; color: #333; margin-bottom: 24px; padding: 16px; background: #f5f5f5; border-radius: 12px; }
+  .type-input {
+    width: 100%;
+    border: 3px solid #90caf9;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 1.2em;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .type-input:focus { border-color: #1565c0; }
+  .type-input.correct-input { border-color: #43a047; background: #e8f5e9; }
+  .type-input.wrong-input { border-color: #e53935; background: #ffebee; }
+  .hint-text { font-size: 0.85em; color: #888; margin-top: 8px; }
+
+  /* RESULTS */
+  #results { display: none; text-align: center; padding: 30px 20px; max-width: 500px; margin: 0 auto; }
+  .result-emoji { font-size: 5em; margin-bottom: 16px; }
+  .result-title { font-size: 2em; font-weight: bold; color: #1565c0; margin-bottom: 8px; }
+  .result-score { font-size: 3em; font-weight: bold; color: #ffd600; margin: 16px 0; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+  .result-msg { font-size: 1.1em; color: #555; margin-bottom: 24px; }
+  .star-row { font-size: 3em; margin-bottom: 16px; }
+  .confetti { position: fixed; pointer-events: none; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; }
+
+  @media (max-width: 480px) {
+    .mc-options { grid-template-columns: 1fr; }
+    .match-area { grid-template-columns: 1fr 1fr; }
+    .mode-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div style="font-size:0.85em;opacity:0.85">🏥 Ol's Ziekenhuis Game</div>
+    <h1>Woordenschat Oefenen</h1>
+  </div>
+  <div style="text-align:right">
+    <div class="score-badge">⭐ <span id="total-stars">0</span> sterren</div>
+  </div>
+</header>
+
+<!-- HOME SCREEN -->
+<div id="home">
+  <div class="big-emoji">🏥</div>
+  <div class="home-title">Toets op 4 november!</div>
+  <div class="home-sub">Kies een week en een spelletje. Elke keer dat je een woord goed hebt, krijg je een ster! ⭐</div>
+
+  <div style="font-weight:bold;font-size:1.1em;margin-top:8px">Welke week?</div>
+  <div class="week-buttons">
+    <button class="week-btn" onclick="selectWeek(1)">
+      <span class="wk-emoji">🩺</span>
+      <strong>Week 1</strong><br>
+      <span style="font-size:0.8em;font-weight:normal">15 woorden</span>
+    </button>
+    <button class="week-btn" onclick="selectWeek(2)">
+      <span class="wk-emoji">💉</span>
+      <strong>Week 2</strong><br>
+      <span style="font-size:0.8em;font-weight:normal">15 woorden</span>
+    </button>
+    <button class="week-btn" onclick="selectWeek(0)">
+      <span class="wk-emoji">🌟</span>
+      <strong>Alles!</strong><br>
+      <span style="font-size:0.8em;font-weight:normal">30 woorden</span>
+    </button>
+  </div>
+
+  <div id="mode-select" style="display:none;width:100%;max-width:500px;margin-top:8px">
+    <div style="font-weight:bold;font-size:1.1em;margin-bottom:12px;text-align:center">Welk spelletje?</div>
+    <div class="mode-grid">
+      <div class="mode-card flash" onclick="startGame('flash')">
+        <div class="mode-icon">🃏</div>
+        <div class="mode-name">Flitskaarten</div>
+        <div class="mode-desc">Woord → betekenis leren</div>
+      </div>
+      <div class="mode-card quiz" onclick="startGame('quiz')">
+        <div class="mode-icon">🎯</div>
+        <div class="mode-name">Quizvragen</div>
+        <div class="mode-desc">4 antwoorden, kies de goede</div>
+      </div>
+      <div class="mode-card match" onclick="startGame('match')">
+        <div class="mode-icon">🔗</div>
+        <div class="mode-name">Koppelen</div>
+        <div class="mode-desc">Woord aan betekenis koppelen</div>
+      </div>
+      <div class="mode-card type" onclick="startGame('type')">
+        <div class="mode-icon">✏️</div>
+        <div class="mode-name">Invullen</div>
+        <div class="mode-desc">Typ het woord zelf!</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GAME AREA -->
+<div id="game">
+  <button class="back-btn" onclick="goHome()">← Terug</button>
+  <div class="question-count" id="q-count"></div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+  <div id="game-content"></div>
+</div>
+
+<!-- RESULTS -->
+<div id="results">
+  <div class="result-emoji" id="result-emoji">🎉</div>
+  <div class="result-title" id="result-title">Geweldig gedaan!</div>
+  <div class="star-row" id="star-row">⭐⭐⭐</div>
+  <div class="result-score" id="result-score">10/10</div>
+  <div class="result-msg" id="result-msg">Je bent er helemaal klaar voor!</div>
+  <button class="btn-primary" onclick="goHome()" style="margin-right:10px">🏠 Opnieuw kiezen</button>
+  <button class="btn-primary btn-success" onclick="replayGame()">🔄 Nog een keer</button>
+</div>
+
+<canvas class="confetti" id="confetti-canvas"></canvas>
+
+<script>
+const WORDS = {
+  1: [
+    { word: 'de apparatuur', def: 'meerdere apparaten', week: 1 },
+    { word: 'de brancard', def: 'draagbaar bed op wieltjes voor iemand die ziek of gewond is', week: 1 },
+    { word: 'de chirurg', def: 'een dokter die operaties mag doen', week: 1 },
+    { word: 'daarnaast', def: 'ook', week: 1 },
+    { word: 'het echoapparaat', def: 'een apparaatje waarmee een dokter je binnenkant op een scherm kan laten zien', week: 1 },
+    { word: 'het medicijn', def: 'een middel om je beter te maken, een geneesmiddel', week: 1 },
+    { word: 'de narcose', def: 'een slaapmiddel waardoor je heel diep slaapt en niks voelt', week: 1 },
+    { word: 'de operatiekamer', def: 'de kamer waar operaties worden uitgevoerd', week: 1 },
+    { word: 'opgenomen worden', def: 'een dag of langer in het ziekenhuis moeten blijven', week: 1 },
+    { word: 'de pijnstiller', def: 'stofje dat ervoor zorgt dat je geen of minder pijn hebt', week: 1 },
+    { word: 'de polikliniek', def: 'afdeling van een ziekenhuis waar je wordt onderzocht en niet blijft slapen', week: 1 },
+    { word: 'de röntgenstralen', def: 'onzichtbare stralen waarmee je in iemands lichaam kunt kijken', week: 1 },
+    { word: 'de traumahelikopter', def: 'een helikopter die artsen snel naar een gewond persoon brengt', week: 1 },
+    { word: 'de verdoving', def: 'als je een plek op je lichaam niet meer voelt door een pijnstiller', week: 1 },
+    { word: 'de verpleegkundige', def: 'iemand die zieke mensen in het ziekenhuis verzorgt en de artsen helpt', week: 1 },
+  ],
+  2: [
+    { word: 'het bezoekuur', def: 'vast tijdstip waarop je iemand in het ziekenhuis mag bezoeken', week: 2 },
+    { word: 'de dagopname', def: 'een bezoek aan het ziekenhuis voor een behandeling waarvoor je niet hoeft te blijven slapen', week: 2 },
+    { word: 'desinfecteren', def: 'ontsmetten, ervoor zorgen dat er geen vuil en bacteriën zijn', week: 2 },
+    { word: 'de hygiëne', def: 'alles wat ervoor zorgt dat er zo weinig mogelijk bacteriën zijn', week: 2 },
+    { word: 'de infectie', def: 'de ontsteking', week: 2 },
+    { word: 'het infuus', def: 'een plastic buisje in je arm of hand, waardoor voeding of medicijnen worden gegeven', week: 2 },
+    { word: 'de ingreep', def: 'iets wat een arts doet om je beter te maken', week: 2 },
+    { word: 'het lab', def: 'kort voor laboratorium; een ruimte waar bijvoorbeeld bloed wordt onderzocht', week: 2 },
+    { word: 'de receptie', def: 'een plek bij de ingang waar je je moet melden en waar je vragen kunt stellen', week: 2 },
+    { word: 'de specialist', def: 'een arts die veel van één deel van het lichaam weet', week: 2 },
+    { word: 'de spray', def: 'een stof die in een spuitbus zit', week: 2 },
+    { word: 'steriel', def: 'zonder bacteriën', week: 2 },
+    { word: 'de verpleegafdeling', def: 'deel van het ziekenhuis waar zieke mensen verzorgd worden', week: 2 },
+    { word: 'via', def: 'langs of door', week: 2 },
+    { word: 'virtueel', def: 'niet echt bestaand, alleen via een computer', week: 2 },
+  ]
+};
+
+let currentWords = [];
+let currentMode = '';
+let currentIdx = 0;
+let score = 0;
+let totalStars = parseInt(localStorage.getItem('ol-stars') || '0');
+let selectedWeek = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function updateStarDisplay() {
+  document.getElementById('total-stars').textContent = totalStars;
+}
+
+function selectWeek(w) {
+  selectedWeek = w;
+  document.getElementById('mode-select').style.display = 'block';
+  document.getElementById('mode-select').scrollIntoView({ behavior: 'smooth' });
+}
+
+function getWords() {
+  if (selectedWeek === 0) return shuffle([...WORDS[1], ...WORDS[2]]);
+  return shuffle([...WORDS[selectedWeek]]);
+}
+
+function startGame(mode) {
+  currentMode = mode;
+  currentWords = getWords();
+  currentIdx = 0;
+  score = 0;
+  document.getElementById('home').style.display = 'none';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
+  renderQuestion();
+}
+
+function replayGame() {
+  document.getElementById('results').style.display = 'none';
+  startGame(currentMode);
+}
+
+function goHome() {
+  document.getElementById('game').style.display = 'none';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('home').style.display = 'flex';
+  document.getElementById('mode-select').style.display = 'none';
+}
+
+function updateProgress() {
+  const pct = (currentIdx / currentWords.length) * 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('q-count').textContent = currentIdx + ' / ' + currentWords.length;
+}
+
+function renderQuestion() {
+  updateProgress();
+  const gc = document.getElementById('game-content');
+  gc.innerHTML = '';
+
+  if (currentIdx >= currentWords.length) {
+    showResults();
+    return;
+  }
+
+  if (currentMode === 'flash') renderFlash(gc);
+  else if (currentMode === 'quiz') renderQuiz(gc);
+  else if (currentMode === 'match') renderMatch(gc);
+  else if (currentMode === 'type') renderType(gc);
+}
+
+// ─── FLASHCARDS ───────────────────────────────────────
+function renderFlash(gc) {
+  const w = currentWords[currentIdx];
+  gc.innerHTML = `
+    <div class="flashcard-wrap">
+      <div class="flashcard" id="fc" onclick="flipCard()">
+        <div class="card-face card-front">
+          <div class="card-hint" style="margin-bottom:12px">🃏 Klik om de betekenis te zien</div>
+          <div class="card-word">${w.word}</div>
+          <div class="card-hint">Week ${w.week}</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-hint" style="margin-bottom:12px">✅ Betekenis:</div>
+          <div class="card-def">${w.def}</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-nav" id="flash-btns" style="display:none">
+      <button class="btn-primary btn-danger" onclick="flashAnswer(false)">😕 Wist ik niet</button>
+      <button class="btn-primary btn-success" onclick="flashAnswer(true)">😄 Wist ik het!</button>
+    </div>
+    <div style="text-align:center;margin-top:12px;color:#888;font-size:0.85em">Klik op de kaart om hem om te draaien</div>
+  `;
+}
+
+function flipCard() {
+  document.getElementById('fc').classList.toggle('flipped');
+  document.getElementById('flash-btns').style.display = 'flex';
+}
+
+function flashAnswer(knew) {
+  if (knew) {
+    score++;
+    totalStars++;
+    localStorage.setItem('ol-stars', totalStars);
+    updateStarDisplay();
+  }
+  currentIdx++;
+  renderQuestion();
+}
+
+// ─── MULTIPLE CHOICE ──────────────────────────────────
+function renderQuiz(gc) {
+  const w = currentWords[currentIdx];
+  // Pick 3 wrong answers
+  const others = shuffle(currentWords.filter((_, i) => i !== currentIdx)).slice(0, 3);
+  const opts = shuffle([w, ...others]);
+  const isWordToMeaning = Math.random() > 0.5;
+
+  gc.innerHTML = `
+    <div class="mc-question">
+      <div class="mc-word">${isWordToMeaning ? w.word : w.def}</div>
+      <div class="mc-label">${isWordToMeaning ? 'Wat betekent dit woord?' : 'Welk woord hoort hierbij?'}</div>
+      <div class="mc-options" id="mc-opts">
+        ${opts.map((o, i) => `
+          <div class="mc-opt" onclick="quizAnswer(this, ${o === w})" data-idx="${i}">
+            ${isWordToMeaning ? o.def : o.word}
+          </div>
+        `).join('')}
+      </div>
+      <div class="feedback" id="mc-feedback"></div>
+    </div>
+  `;
+}
+
+function quizAnswer(el, correct) {
+  const opts = document.querySelectorAll('.mc-opt');
+  opts.forEach(o => o.classList.add('disabled'));
+  const fb = document.getElementById('mc-feedback');
+  if (correct) {
+    el.classList.add('correct');
+    fb.textContent = '🎉 Goed zo!';
+    fb.className = 'feedback good';
+    score++;
+    totalStars++;
+    localStorage.setItem('ol-stars', totalStars);
+    updateStarDisplay();
+  } else {
+    el.classList.add('wrong');
+    fb.textContent = '❌ Helaas! Probeer de volgende!';
+    fb.className = 'feedback bad';
+    // Show correct
+    opts.forEach(o => {
+      const txt = o.textContent.trim();
+      const w = currentWords[currentIdx];
+      if (txt === w.def || txt === w.word) o.classList.add('correct');
+    });
+  }
+  setTimeout(() => { currentIdx++; renderQuestion(); }, 1500);
+}
+
+// ─── MATCHING ─────────────────────────────────────────
+let matchSelected = null;
+let matchPairs = [];
+let matchMatched = 0;
+
+function renderMatch(gc) {
+  const batch = currentWords.slice(currentIdx, currentIdx + 5);
+  matchPairs = shuffle(batch);
+  matchMatched = 0;
+  matchSelected = null;
+
+  const leftItems = shuffle([...matchPairs]);
+  const rightItems = shuffle([...matchPairs]);
+
+  gc.innerHTML = `
+    <div style="background:white;border-radius:20px;padding:20px;box-shadow:0 4px 16px rgba(0,0,0,0.1)">
+      <div style="text-align:center;font-weight:bold;font-size:1.1em;margin-bottom:16px;color:#1565c0">🔗 Koppel het woord aan de betekenis!</div>
+      <div class="match-area">
+        <div class="match-col">
+          <div class="match-col-label">Woord</div>
+          ${leftItems.map(w => `<div class="match-item" data-word="${w.word}" data-type="word" onclick="matchClick(this)">${w.word}</div>`).join('')}
+        </div>
+        <div class="match-col">
+          <div class="match-col-label">Betekenis</div>
+          ${rightItems.map(w => `<div class="match-item" data-word="${w.word}" data-type="def" onclick="matchClick(this)">${w.def}</div>`).join('')}
+        </div>
+      </div>
+      <div class="match-score" id="match-score">Nog ${matchPairs.length} koppels te maken</div>
+    </div>
+  `;
+}
+
+function matchClick(el) {
+  if (el.classList.contains('matched')) return;
+
+  if (!matchSelected) {
+    if (matchSelected) matchSelected.classList.remove('selected');
+    matchSelected = el;
+    el.classList.add('selected');
+    return;
+  }
+
+  if (matchSelected === el) {
+    el.classList.remove('selected');
+    matchSelected = null;
+    return;
+  }
+
+  // Check if same type
+  if (matchSelected.dataset.type === el.dataset.type) {
+    matchSelected.classList.remove('selected');
+    matchSelected = el;
+    el.classList.add('selected');
+    return;
+  }
+
+  // Check match
+  const correct = matchSelected.dataset.word === el.dataset.word;
+  if (correct) {
+    matchSelected.classList.remove('selected');
+    matchSelected.classList.add('matched');
+    el.classList.add('matched');
+    matchMatched++;
+    score++;
+    totalStars++;
+    localStorage.setItem('ol-stars', totalStars);
+    updateStarDisplay();
+
+    const remaining = matchPairs.length - matchMatched;
+    document.getElementById('match-score').textContent = remaining > 0 ? `Nog ${remaining} koppels te maken` : '🎉 Alle koppels gevonden!';
+
+    if (matchMatched === matchPairs.length) {
+      setTimeout(() => {
+        currentIdx += matchPairs.length;
+        renderQuestion();
+      }, 1200);
+    }
+  } else {
+    matchSelected.classList.remove('selected');
+    matchSelected.classList.add('wrong-flash');
+    el.classList.add('wrong-flash');
+    setTimeout(() => {
+      matchSelected.classList.remove('wrong-flash');
+      el.classList.remove('wrong-flash');
+    }, 500);
+  }
+
+  matchSelected = null;
+}
+
+// ─── TYPE IT ──────────────────────────────────────────
+function renderType(gc) {
+  const w = currentWords[currentIdx];
+  gc.innerHTML = `
+    <div class="type-question">
+      <div style="font-weight:bold;color:#1565c0;margin-bottom:8px;font-size:0.9em">✏️ Typ het goede woord!</div>
+      <div class="type-def">${w.def}</div>
+      <input class="type-input" id="type-input" placeholder="Typ het woord..." autocomplete="off" autocorrect="off" spellcheck="false" oninput="checkType()" />
+      <div class="hint-text" id="hint-text">Begint met: <strong>${w.word[0].toUpperCase()}</strong> (${w.word.length} letters)</div>
+      <div class="feedback" id="type-feedback"></div>
+      <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn-primary btn-warn" id="skip-btn" onclick="typeSkip()">Sla over 👀</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('type-input').focus();
+}
+
+function normalize(s) {
+  return s.toLowerCase().trim()
+    .replace(/^(de |het |een )/, '')
+    .replace(/ë/g, 'e').replace(/é/g, 'e').replace(/ö/g, 'o').replace(/ü/g, 'u');
+}
+
+function checkType() {
+  const w = currentWords[currentIdx];
+  const input = document.getElementById('type-input').value;
+  const correct = normalize(input) === normalize(w.word);
+
+  if (correct) {
+    document.getElementById('type-input').classList.add('correct-input');
+    document.getElementById('type-feedback').textContent = '🎉 Goed! Super gedaan!';
+    document.getElementById('type-feedback').className = 'feedback good';
+    document.getElementById('skip-btn').style.display = 'none';
+    score++;
+    totalStars++;
+    localStorage.setItem('ol-stars', totalStars);
+    updateStarDisplay();
+    setTimeout(() => { currentIdx++; renderQuestion(); }, 1200);
+  }
+}
+
+function typeSkip() {
+  const w = currentWords[currentIdx];
+  const inp = document.getElementById('type-input');
+  inp.classList.add('wrong-input');
+  document.getElementById('type-feedback').innerHTML = `Het antwoord was: <strong>${w.word}</strong>`;
+  document.getElementById('type-feedback').className = 'feedback bad';
+  document.getElementById('skip-btn').style.display = 'none';
+  setTimeout(() => { currentIdx++; renderQuestion(); }, 2000);
+}
+
+// ─── RESULTS ──────────────────────────────────────────
+function showResults() {
+  document.getElementById('game').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+
+  const total = currentMode === 'match' ? currentWords.length : currentWords.length;
+  const pct = Math.round((score / total) * 100);
+
+  let emoji, title, msg, stars;
+  if (pct >= 90) { emoji = '🏆'; title = 'Waanzinnig goed!'; msg = 'Je weet deze woorden perfect. De toets wordt een fluitje van een cent!'; stars = '⭐⭐⭐'; }
+  else if (pct >= 70) { emoji = '🎉'; title = 'Heel goed gedaan!'; msg = 'Je kent de meeste woorden al! Nog even oefenen en je haalt een dikke voldoende.'; stars = '⭐⭐'; }
+  else if (pct >= 50) { emoji = '💪'; title = 'Goed bezig!'; msg = 'Je bent er goed mee bezig. Nog een keer oefenen en je bent er klaar voor!'; stars = '⭐'; }
+  else { emoji = '📚'; title = 'Blijven oefenen!'; msg = 'Deze woorden zijn lastig. Probeer de flitskaarten eerst om ze te leren!'; stars = ''; }
+
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-title').textContent = title;
+  document.getElementById('result-score').textContent = score + ' / ' + total;
+  document.getElementById('result-msg').textContent = msg;
+  document.getElementById('star-row').textContent = stars;
+
+  if (pct >= 70) launchConfetti();
+}
+
+// ─── CONFETTI ─────────────────────────────────────────
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const pieces = Array.from({ length: 120 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * -200,
+    size: 6 + Math.random() * 8,
+    speed: 2 + Math.random() * 3,
+    drift: (Math.random() - 0.5) * 2,
+    color: ['#ffd600','#f44336','#4caf50','#2196f3','#9c27b0','#ff9800'][Math.floor(Math.random() * 6)],
+    rotation: Math.random() * 360,
+    rotSpeed: (Math.random() - 0.5) * 8,
+  }));
+
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation * Math.PI / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+      ctx.restore();
+      p.y += p.speed;
+      p.x += p.drift;
+      p.rotation += p.rotSpeed;
+    });
+    frame++;
+    if (frame < 200) requestAnimationFrame(draw);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  draw();
+}
+
+updateStarDisplay();
+</script>
+</body>
+</html>
